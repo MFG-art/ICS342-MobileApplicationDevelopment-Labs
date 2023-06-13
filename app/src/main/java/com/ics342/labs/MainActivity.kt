@@ -16,10 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,12 +25,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ics342.labs.data.DataItem
 import com.ics342.labs.ui.theme.LabsTheme
 
+// Used for remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,10 +62,13 @@ private val dataItems = listOf(
 
 class MainActivity : ComponentActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // We are doing this because we want to keep setContent as readable as possible
+            // DataListScreen is a function that contains all displayed elements
+            // The state is hoisted to DataListScreen
+            // It behaves like a ViewModel (in a way)
             DataListScreen(items = dataItems)
         }
     }
@@ -82,15 +84,18 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun DataListScreen(items: List<DataItem>){
-    var showDialog by remember { mutableStateOf(false) }
+//    var showDialog by remember { mutableStateOf(false) }  - not using this, using rememberDataItem instead
     var rememberDataItem by remember { mutableStateOf<DataItem?>(null)}
-    DataItemList(items) {rememberDataItem = it}
+    DataItemList(items) {rememberDataItem = it} // passing lambda function as last argument
+
+    // scope function. Calling a function on an object
+    // let -> this (refers to DataItem)
     rememberDataItem?.let {
         AlertDialog(
             onDismissRequest = { rememberDataItem = null},
             title = { Text(text = it.name.toString()) },
             text = { Text(text = it.description) },
-            confirmButton = { TextButton(onClick = { rememberDataItem = null }) { Text("Button")}},
+            confirmButton = { TextButton(onClick = { rememberDataItem = null }) { Text("Okay")}},
         )
 
     }
@@ -114,7 +119,7 @@ fun DataListScreen(items: List<DataItem>){
 
 @Composable
 fun DataItemView(dataItem: DataItem) {
-    /* Create the view for the data item her. */
+    /* Create the view for the data item here. */
     Row(
         modifier = Modifier
             .height(50.dp)
