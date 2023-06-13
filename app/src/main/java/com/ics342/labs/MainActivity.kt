@@ -1,9 +1,13 @@
 package com.ics342.labs
 
+
+import android.app.AlertDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,16 +18,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ics342.labs.data.DataItem
 import com.ics342.labs.ui.theme.LabsTheme
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 
 private val dataItems = listOf(
     DataItem(1, "Item 1", "Description 1"),
@@ -49,21 +62,12 @@ private val dataItems = listOf(
 )
 
 class MainActivity : ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LabsTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Column() {
-                        Greeting("Android")
-                        DataItemList(dataItems = dataItems)
-                    }
-
-                }
-
-            }
-
+            DataListScreen(items = dataItems)
         }
     }
 }
@@ -77,22 +81,56 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun DataListScreen(items: List<DataItem>){
+    var showDialog by remember { mutableStateOf(false) }
+    var rememberDataItem by remember { mutableStateOf<DataItem?>(null)}
+    DataItemList(items) {rememberDataItem = it}
+    rememberDataItem?.let {
+        AlertDialog(
+            onDismissRequest = { rememberDataItem = null},
+            title = { Text(text = it.name.toString()) },
+            text = { Text(text = it.description) },
+            confirmButton = { TextButton(onClick = { rememberDataItem = null }) { Text("Button")}},
+        )
+
+    }
+
+    LabsTheme {
+        // A surface container using the 'background' color from the theme
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Column() {
+                Greeting("Android")
+                DataItemList(dataItems = items, onClickReturn = {rememberDataItem = it})
+            }
+
+        }
+
+    }
+}
+
+
+
+
+
+@Composable
 fun DataItemView(dataItem: DataItem) {
     /* Create the view for the data item her. */
     Row(
-        modifier = Modifier.height(50.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
+        modifier = Modifier
+            .height(50.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "${dataItem.id}"
+            text = dataItem.id.toString()
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = "${dataItem.name}"
+            text = dataItem.name
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = "${dataItem.description}"
+            text = dataItem.description
         )
 
     }
@@ -100,14 +138,17 @@ fun DataItemView(dataItem: DataItem) {
 }
 
 @Composable
-fun DataItemList(dataItems: List<DataItem>) {
-    /* Create the list here. This function will call DataItemView() */
-    LazyColumn{
-        items(1){
-            dataItems.forEach{DataItem -> DataItemView(DataItem)}
+fun DataItemList(dataItems: List<DataItem>, onClickReturn: (DataItem) -> Unit) {
+/* Create the list here. This function will call DataItemView() */
+
+    LazyColumn {
+        items(dataItems) {
+                DataItem ->
+            Box( modifier = Modifier.clickable{ onClickReturn(DataItem)}){
+                DataItemView(DataItem)
+            }
         }
     }
-
 }
 
 @Preview(showBackground = true)
