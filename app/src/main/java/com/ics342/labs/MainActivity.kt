@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -78,8 +79,29 @@ class MainActivity : ComponentActivity() {
 
             NavHost(navController = navController, startDestination = "data-list-screen") {
                 composable("data-list-screen") { DataListScreen(navController, dataItems)}
-                composable("data-item-view"){
-                    DataItemSelectedView(navController)
+                composable("data-item-view/{id}/{name}/{description}",
+                arguments = listOf(
+                    navArgument("id"){
+                        type = NavType.StringType
+                        nullable = false
+                    },
+                    navArgument("name"){
+                        type = androidx.navigation.NavType.StringType
+                        nullable = false
+                    },
+                    navArgument("description"){
+                        type = androidx.navigation.NavType.StringType
+                        nullable = false
+                    }
+                ) )
+                {entry ->
+                    DataItemSelectedView(
+                        navController,
+                        id = entry.arguments?.getString("id").toString(),
+                        name = entry.arguments?.getString("name").toString(),
+                        description = entry.arguments?.getString("description").toString(),
+
+                    )
                 }
 
             }
@@ -108,7 +130,7 @@ fun DataListScreen(navController: NavController, items: List<DataItem>){
 
 
 @Composable
-fun DataItemSelectedView(navController: NavController){
+fun DataItemSelectedView(navController: NavController, id: String, name: String, description: String){
     Row(
         modifier = Modifier
             .height(50.dp)
@@ -116,15 +138,15 @@ fun DataItemSelectedView(navController: NavController){
         horizontalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "id"
+            text = id
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = "name"
+            text = name
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = "description"
+            text = description
 
         )
 
@@ -163,9 +185,17 @@ fun DataItemList(navController: NavController, dataItems: List<DataItem>) {
     LazyColumn {
         items(dataItems) {
                 DataItem ->
-            Box( modifier = Modifier.clickable{navController.navigate("data-item-view")}){
+            Box( modifier = Modifier.clickable{navController.navigate(
+                routeMaker("data-item-view","id","name","description")
+            )}){
                 DataItemView(DataItem)
             }
         }
     }
+}
+
+fun routeMaker (route: String, vararg args: String) : String{
+    var routeWithArgs= route
+    args.forEach { arg -> routeWithArgs = "$routeWithArgs/$arg" }
+    return routeWithArgs
 }
