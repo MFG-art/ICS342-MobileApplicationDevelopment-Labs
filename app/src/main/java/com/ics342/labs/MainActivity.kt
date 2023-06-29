@@ -2,9 +2,12 @@ package com.ics342.labs
 
 
 import android.app.AlertDialog
+import android.graphics.Paint.Style
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +17,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +40,18 @@ import com.ics342.labs.ui.theme.LabsTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.ics342.labs.ui.theme.Typography
 
 
 private val dataItems = listOf(
@@ -64,48 +81,55 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            // We are doing this because we want to keep setContent as readable as possible
-            // DataListScreen is a function that contains all displayed elements
-            // The state is hoisted to DataListScreen
-            // It behaves like a ViewModel (in a way)
-            DataListScreen(items = dataItems)
+            val navController = rememberNavController()
+
+
+            NavHost(navController = navController, startDestination = "ListScreen") {
+                composable("ListScreen") { DataListScreen(navController, dataItems)}
+                composable("DetailsScreen/{id}/{name}/{description}",
+                arguments = listOf(
+                    navArgument("id"){
+                        type = NavType.StringType
+                        nullable = false
+                    },
+                    navArgument("name"){
+                        type = androidx.navigation.NavType.StringType
+                        nullable = false
+                    },
+                    navArgument("description"){
+                        type = androidx.navigation.NavType.StringType
+                        nullable = false
+                    }
+                ) )
+                {entry ->
+                    DataItemSelectedView(
+                        navController,
+                        id = entry.arguments?.getString("id").toString(),
+                        name = entry.arguments?.getString("name").toString(),
+                        description = entry.arguments?.getString("description").toString(),
+
+                    )
+                }
+
+            }
+
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Composable
-fun DataListScreen(items: List<DataItem>){
+fun DataListScreen(navController: NavController, items: List<DataItem>){
 //    var showDialog by remember { mutableStateOf(false) }  - not using this, using rememberDataItem instead
-    var rememberDataItem by remember { mutableStateOf<DataItem?>(null)}
-    DataItemList(items) {rememberDataItem = it} // passing lambda function as last argument
 
-    // scope function. Calling a function on an object
-    // let -> this (refers to DataItem)
-    rememberDataItem?.let {
-        AlertDialog(
-            onDismissRequest = { rememberDataItem = null},
-            title = { Text(text = it.name.toString()) },
-            text = { Text(text = it.description) },
-            confirmButton = { TextButton(onClick = { rememberDataItem = null }) { Text("Okay")}},
-        )
 
-    }
 
     LabsTheme {
         // A surface container using the 'background' color from the theme
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column() {
-                Greeting("Android")
-                DataItemList(dataItems = items, onClickReturn = {rememberDataItem = it})
+                DataItemList(navController = navController, dataItems = items)
             }
 
         }
@@ -114,8 +138,43 @@ fun DataListScreen(items: List<DataItem>){
 }
 
 
+@Composable
+fun DataItemSelectedView(navController: NavController, id: String, name: String, description: String){
+    LabsTheme {
+        // A surface container using the 'background' color from the theme
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = id,
+                        style = TextStyle(color = Color.White, textAlign = TextAlign.Center),
+                        modifier = Modifier.background(color = Color.hsl(0f,1f,0.25f,1f)).fillMaxWidth()
+                            .align(Alignment.CenterHorizontally).padding(50.dp)
+                    )
+
+                    Text(
+                        text = name,
+                        style = TextStyle(color = Color.White, textAlign = TextAlign.Center),
+                        modifier = Modifier.background(color = Color.hsl(120f,1f,0.25f,1f)).fillMaxWidth()
+                            .align(Alignment.CenterHorizontally).padding(50.dp),
+                    )
+                    Text(
+                        text = description,
+                        style = TextStyle(color = Color.White, textAlign = TextAlign.Center),
+                        modifier = Modifier.background(color = Color.hsl(230f,1f,0.25f,1f)).fillMaxWidth()
+                            .align(Alignment.CenterHorizontally).padding(50.dp),
 
 
+                    )
+
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun DataItemView(dataItem: DataItem) {
@@ -143,23 +202,24 @@ fun DataItemView(dataItem: DataItem) {
 }
 
 @Composable
-fun DataItemList(dataItems: List<DataItem>, onClickReturn: (DataItem) -> Unit) {
+fun DataItemList(navController: NavController, dataItems: List<DataItem>) {
 /* Create the list here. This function will call DataItemView() */
 
     LazyColumn {
         items(dataItems) {
                 DataItem ->
-            Box( modifier = Modifier.clickable{ onClickReturn(DataItem)}){
+            Box( modifier = Modifier.clickable{navController.navigate(
+                routeMaker("DetailsScreen",DataItem.id.toString(),DataItem.name,DataItem.description)
+
+            )}){
                 DataItemView(DataItem)
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LabsTheme {
-        Greeting("Android")
-    }
+fun routeMaker (route: String, vararg args: String) : String{
+    var routeWithArgs= route
+    args.forEach { arg -> routeWithArgs = "$routeWithArgs/$arg" }
+    return routeWithArgs
 }
