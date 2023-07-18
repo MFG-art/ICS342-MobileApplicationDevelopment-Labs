@@ -31,16 +31,41 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var hasPermission // state for tracking if the permission has been granted
-            var showPermissionRationale // state for tracking if the rationale should be shown
+            var hasPermission  by remember {mutableStateOf(false)}// state for tracking if the permission has been granted
+            var showPermissionRationale by  remember { mutableStateOf(false) }// state for tracking if the rationale should be shown
             val context = LocalContext.current
+            // The ManagedActivityResultLauncher for handling requesting permission
+            val launcher = rememberLauncherForActivityResult(contract = RequestPermission()){
+                granted ->{
+                    if (granted){
+                        hasPermission = true
+                    } else {
+                        showPermissionRationale = true
+                    }
+                }
+            }
 
-            val launcher = // The ManagedActivityResultLauncher for handling requesting permission
 
             LabsTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+
+
+                        if(hasPermission){
+                            LocationView()
+
+                        } else {
+
+                                
+                            }
+                            Button(onClick = { checkOrRequestPermission(context,Manifest.permission.ACCESS_COARSE_LOCATION, launcher){hasPermission = true} }) {
+                                
+                            }
+
+                        }
+     
+
 
                         // if permission has been granted, show the LocationView
                         // else if permission has not been granted, show a button to to request permission
@@ -52,8 +77,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
+
 }
+
 
 @Composable
 private fun LocationView() {
@@ -92,6 +118,13 @@ private fun checkOrRequestPermission(
     launcher: ManagedActivityResultLauncher<String, Boolean>,
     permissionGranted: () -> Unit
 ) {
+    val permissionCheckResult = ContextCompat.checkSelfPermission(context,Manifest.permission.ACCESS_COARSE_LOCATION)
+    if (permissionCheckResult == PackageManager.PERMISSION_GRANTED){
+        permissionGranted()
+    } else {
+        launcher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
+
     // Ask Android if the app has the permission with ContextCompat.checkSelfPermission
 
     // if permission is granted, call the permission granted function
