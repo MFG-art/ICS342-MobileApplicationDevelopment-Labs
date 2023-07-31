@@ -1,6 +1,7 @@
 package com.ics342.labs
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment.Companion
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.ics342.labs.ui.theme.LabsTheme
 
@@ -61,8 +63,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 fun startNotificationService(context: Context) {
-    TODO("Start the Notification Service")
+    // start the notification service
+
+    val notificationServiceIntent = Intent(context, NotificationService::class.java)
+    context.startService(notificationServiceIntent)
 }
 
 private fun checkOrRequestPermission(
